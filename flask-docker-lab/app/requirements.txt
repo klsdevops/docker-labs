@@ -1,2 +1,4 @@
 Flask==2.2.2
-Werkzeug==2.2.2
+
+#Uncomment the below line when the docker container exit with errors
+#Werkzeug==2.2.2
