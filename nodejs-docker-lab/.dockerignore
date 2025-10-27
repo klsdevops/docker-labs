@@ -1,0 +1,9 @@
+# Ignore dependencies on the host
+node_modules
+
+# Ignore git files
+.git
+.gitignore
+
+# Ignore system files
+.DS_Store
