@@ -1,4 +1,4 @@
-# flask-docker-lab
+# LAB 1: flask-docker-lab
 This is a lab for docker image build and test. 
 For our lab, you're going to containerize a simple Python web application by writing a Dockerfile from scratch. I've created a GitHub repository with the starter code and step-by-step instructions in this README.md file. Please navigate to the repo now, and let's get building!
 
@@ -113,3 +113,131 @@ env/
 .vscode/
 *.DS_Store
 ```
+
+# LAB 2: nodejs-docker-lab
+
+Copy or Create these three files in your "nodejs-docker-lab" project folder.
+
+### package.json
+(This file defines your app and its dependencies.)
+
+```
+JSON
+```
+
+```
+{
+  "name": "my-docker-app",
+  "version": "1.0.0",
+  "description": "Simple Docker app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
+```
+### server.js
+(This is your web server file.)
+
+```
+JavaScript
+```
+```
+const express = require('express');
+
+// Constants
+const PORT = 3000;
+const HOST = '0.0.0.0';
+
+// App
+const app = express();
+app.get('/', (req, res) => {
+  res.send('Hello from my Dockerized App!');
+});
+
+app.listen(PORT, HOST, () => {
+  console.log(`Running on http://${HOST}:${PORT}`);
+});
+```
+
+### .dockerignore
+(This file tells Docker what to ignore.)
+
+```
+# Ignore dependencies on the host
+node_modules
+
+# Ignore git files
+.git
+.gitignore
+
+# Ignore system files
+.DS_Store
+
+```
+
+### Steps
+1. **Setup:** download a simple app structure (e.g., a server file, a package.json, a package-lock.json and a .dockerignore file).
+
+2. **Generate the Lock File (On Your Local Machine):** If you don't find a package-lock.json file in your folder, run the below command on your local,
+    
+    ```
+    npm install
+    ```
+    You will see a new package-lock.json file appear. (Make sure this file is **NOT** in your .dockerignore file!)
+
+3. **Create Dockerfile:**
+
+    **Step 1:** The Basics (FROM and WORKDIR): Start the Dockerfile with the base image and define the working directory.
+   
+   Dockerfile
+   ```
+   FROM node:18-slim
+   WORKDIR /usr/src/app
+   ```
+   **Step 2:** Dependencies (COPY and RUN): Copy the dependency file first and install, leveraging the build cache.
+
+   Dockerfile
+   ```
+   COPY package.json package-lock.json ./
+   RUN npm install
+   ```
+   **Step 3:** App Code and Expose: Copy the application code and expose the port (e.g., 3000).
+
+   Dockerfile
+   ```
+   COPY . .
+   EXPOSE 3000
+   ```
+   **Step 4:** The Command (CMD): Define the startup command.
+
+   Dockerfile
+   ```
+   CMD ["npm", "start"]
+   ```
+        
+5. **Build:** Execute the build command: 
+   ```
+   docker build -t my-web-app:1.0 .
+   ```
+        
+6. **Run the app:** Run the container, mapping the port: 
+    
+   ```
+   docker run -d --name my-node-app -p 8080:3000 my-web-app:1.0
+   ```
+
+7. **Test & Verify:** Test the app in the browser.
+
+   ```
+   localhost:8080
+   ```
+   
+8. **Cleanup:** Stop and remove the container:
+
+   ```
+   docker stop my-node-app && docker rm my-node-app 
+   ```
