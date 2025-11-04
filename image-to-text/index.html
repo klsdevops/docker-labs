@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image-to-Text OCR App</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-2xl">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6 border-b pb-3">OCR Web Converter</h1>
+        <p class="text-center text-gray-500 mb-8">Upload an image (JPEG, PNG) to extract the text.</p>
+
+        <!-- File Upload Form -->
+        <div class="space-y-6">
+            <input type="file" id="imageInput" accept="image/*" class="w-full text-sm text-gray-700
+                file:mr-4 file:py-2 file:px-4
+                file:rounded-lg file:border-0
+                file:text-sm file:font-semibold
+                file:bg-indigo-50 file:text-indigo-700
+                hover:file:bg-indigo-100
+                cursor-pointer"
+            >
+            
+            <button id="uploadButton" 
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg shadow-md transition duration-150 ease-in-out disabled:opacity-50"
+                    disabled>
+                Convert Image to Text
+            </button>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" class="hidden mt-6 text-center text-indigo-600 font-medium">
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-indigo-600 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Processing OCR...
+        </div>
+
+        <!-- Result Display -->
+        <div id="resultContainer" class="mt-8 hidden">
+            <h2 class="text-xl font-semibold text-gray-700 mb-4">Extracted Text:</h2>
+            <textarea id="extractedText" 
+                      rows="10" 
+                      readonly 
+                      class="w-full p-4 border border-gray-300 rounded-lg bg-gray-50 text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      placeholder="The extracted text will appear here..."></textarea>
+            
+            <button id="copyButton" 
+                    class="mt-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">
+                Copy to Clipboard
+            </button>
+        </div>
+
+        <!-- Error Message -->
+        <div id="errorContainer" class="mt-6 hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative" role="alert">
+            <strong class="font-bold">Error:</strong>
+            <span id="errorMessage" class="block sm:inline"></span>
+        </div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const resultContainer = document.getElementById('resultContainer');
+        const extractedText = document.getElementById('extractedText');
+        const errorContainer = document.getElementById('errorContainer');
+        const errorMessage = document.getElementById('errorMessage');
+        const copyButton = document.getElementById('copyButton');
+
+        // Enable button when a file is selected
+        imageInput.addEventListener('change', () => {
+            uploadButton.disabled = !imageInput.files.length;
+        });
+
+        copyButton.addEventListener('click', () => {
+            extractedText.select();
+            document.execCommand('copy');
+            copyButton.textContent = 'Copied!';
+            setTimeout(() => {
+                copyButton.textContent = 'Copy to Clipboard';
+            }, 2000);
+        });
+
+        uploadButton.addEventListener('click', async () => {
+            const file = imageInput.files[0];
+            if (!file) return;
+
+            // 1. Setup UI for processing
+            loadingIndicator.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+            errorContainer.classList.add('hidden');
+            uploadButton.disabled = true;
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            try {
+                // 2. Send the image to the Flask backend
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                // 3. Handle response
+                if (response.ok && result.success) {
+                    extractedText.value = result.text.trim();
+                    resultContainer.classList.remove('hidden');
+                } else {
+                    errorMessage.textContent = result.error || 'An unknown error occurred on the server.';
+                    errorContainer.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                errorMessage.textContent = 'Could not connect to the backend server. Is the Docker container running?';
+                errorContainer.classList.remove('hidden');
+                console.error('Fetch error:', error);
+            } finally {
+                // 4. Reset UI
+                loadingIndicator.classList.add('hidden');
+                uploadButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
